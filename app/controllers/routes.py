@@ -1,9 +1,9 @@
 from fastapi import APIRouter
 
-from .endpoints import book_controller
-from . endpoints import page_controller
+from .endpoints import books
+from .endpoints import pages
 
 router = APIRouter()
 
-router.include_router(book_controller.router, prefix='/books', tags=['books'])
-router.include_router(page_controller.router, prefix='/pages', tags=['pages'])
+router.include_router(books.router, prefix='/books', tags=['books'])
+router.include_router(pages.router, prefix='/pages', tags=['pages'])
