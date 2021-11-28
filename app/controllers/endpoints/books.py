@@ -1,6 +1,6 @@
 from logging import raiseExceptions
 from fastapi import APIRouter, Depends, HTTPException, status
-from schemas import Book, CompleteBook
+from schemas import AllBooks, Book, BookWithId, CompleteBook
 from sqlalchemy.orm import Session
 from database.connection import get_db
 import string
@@ -9,15 +9,18 @@ from database import models
 
 router = APIRouter()
 
-def generate_magic_code(size=6, chars=string.ascii_uppercase + string.digits):
+def generate_magic_code(size=6, chars=string.ascii_uppercase):
+    """
+        Generates Magic Code with 6 random capital letters.
+    """
     return ''.join(random.choice(chars) for _ in range(size))
 
-@router.post('/', status_code=status.HTTP_201_CREATED)
+@router.post('/', status_code=status.HTTP_201_CREATED, response_model=BookWithId)
 async def create_book(request: Book, db: Session = Depends(get_db)):
+    """
+        Create a new book.
+    """
     try:
-        """
-            Create a new book.
-        """
         new_book = models.Book(
             title=request.title,
             author=request.author,
@@ -29,29 +32,31 @@ async def create_book(request: Book, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(new_book)
 
-        return new_book
+        return new_book.__dict__
     except:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Couldn't create book",
+            detail="Couldn't create book.",
         )
 
-@router.get('/')
+@router.get('/', response_model=AllBooks)
 async def get_all_books(db: Session = Depends(get_db)):
+    """
+        List all books created without their pages. To see them you need to 
+        get the book specifically by the Magic Code.
+    """
     try:
-        """
-            List all books created without their pages. To see them you need to 
-            get the book by specifically by the Magic Code.
-        """
         books = db.query(models.Book).all()
         
         if not books:
-            return HTTPException(
-                status_code=status.HTTP_204_NO_CONTENT,
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
                 detail="No Book Found."
             )
+            
+        response_books = {"books": [book.__dict__ for book in books]}
+        return response_books
         
-        return books
     except HTTPException as e:
         raise e
     except:
@@ -62,10 +67,10 @@ async def get_all_books(db: Session = Depends(get_db)):
 
 @router.get('/{magic_code}', response_model=CompleteBook)
 async def get_book_by_magic_code(magic_code, db: Session = Depends(get_db)):
+    """
+        Find the book by its Magic Code.
+    """
     try:
-        """
-            Finds the book by the Magic Code.
-        """
         book = db.query(models.Book).filter_by(magic_code=magic_code).first()
         if not book:
             raise HTTPException(
@@ -77,38 +82,20 @@ async def get_book_by_magic_code(magic_code, db: Session = Depends(get_db)):
         if pages:
             book.__dict__["pages"] = [page.__dict__ for page in pages]
         return book.__dict__
+
     except HTTPException as e:
         raise e
     except:
          raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Couldn't get book",
+                detail="Couldn't get book.",
             )
 
-@router.delete('/{id}')
-def delete_book(id, db: Session = Depends(get_db)):
-    try:
-        book = db.query(models.Book).filter_by(id=id)
-        if not book.first():
-            if not book.fist():
-                return HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND,
-                        detail=f'Book with id {id} not found',
-                    )
-
-        book.delete(synchronize_session=False)
-        db.commit()
-        return f'Book {id} deleted.'
-    except HTTPException as e:
-        raise e
-    except:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Couldn't delete book.",
-        )
-
-@router.put('/{id}')
+@router.put('/{id}', response_model=BookWithId)
 def update_book(id,  request: Book, db: Session = Depends(get_db)):
+    """
+        Update all book's attributes. You must provide all of them, otherwise, it will fail.
+    """
     try:
         book = db.query(models.Book).filter_by(id=id)
         
@@ -120,11 +107,38 @@ def update_book(id,  request: Book, db: Session = Depends(get_db)):
 
         book.update(request.dict())
         db.commit()
-        return book.first()
+        return book.first().__dict__
+
     except HTTPException as e:
         raise e
     except:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Couldn't update book.",
+        )
+
+@router.delete('/{id}')
+def delete_book(id, db: Session = Depends(get_db)):
+    """
+        Delete the book.
+    """
+    try:
+        book = db.query(models.Book).filter_by(id=id)
+        if not book.first():
+            if not book.fist():
+                raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f'Book with id {id} not found',
+                    )
+
+        book.delete(synchronize_session=False)
+        db.commit()
+        return f'Book {id} deleted.'
+
+    except HTTPException as e:
+        raise e
+    except:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Couldn't delete book.",
         )
