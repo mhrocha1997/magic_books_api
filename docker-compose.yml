@@ -1,11 +1,11 @@
 version: '3.4'
 services:
     magic_books:
-        container_name: magic_books-container
+        container_name: magic-books-container
+        image: magic-books-image
         build: ./app/
         depends_on: 
           - db
-        # image: magic_books-image
         volumes:
             - ./app/:/usr/src/app/
         ports:

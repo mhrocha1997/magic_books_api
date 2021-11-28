@@ -10,13 +10,13 @@ class Book(Base):
     teacher = Column(String)
     magic_code = Column(String, unique=True)
 
-    pages = relationship("Page", back_populates="book")
+    pages = relationship("Page", passive_deletes=True, back_populates="book")
 
 class Page(Base):
     __tablename__='pages'
     id = Column(Integer, primary_key=True, index=True)
     text = Column(String)
     image = Column(String)
-    book_id = Column(Integer, ForeignKey("books.id"))
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"))
 
     book = relationship("Book", back_populates="pages")
