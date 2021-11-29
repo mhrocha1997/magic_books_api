@@ -1,29 +1,36 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
+
+from pydantic.types import constr
 
 
 class Page(BaseModel):
-    text: str
-    image: str
+    text: Optional[constr(min_length=4)]
+    image: Optional[constr(min_length=4)]
+
 
 class PageWithId(Page):
     id: int
     book_id: int
 
+
 class Book(BaseModel):
-    title: str
-    author: str
-    teacher: str
+    title: Optional[constr(min_length=4)]
+    author: Optional[constr(min_length=4)]
+    teacher: Optional[constr(min_length=4)]
+
 
 class BookWithId(Book):
     id: int
     magic_code: str
 
+
 class AllBooks(BaseModel):
     books: List[BookWithId]
 
     class Config():
-        orm_mode=True
+        orm_mode = True
+
 
 class CompleteBook(Book):
     pages: List[dict] = []

@@ -3,9 +3,9 @@ from starlette.status import HTTP_406_NOT_ACCEPTABLE
 from schemas import Page, PageWithId
 from sqlalchemy.orm import Session
 from database.connection import get_db
-from database import models
 from services import pages
 router = APIRouter()
+
 
 @router.post('/book/{book_id}', status_code=status.HTTP_201_CREATED, response_model=PageWithId)
 async def create_page(request: Page, book_id, db: Session = Depends(get_db)):
@@ -23,13 +23,14 @@ async def create_page(request: Page, book_id, db: Session = Depends(get_db)):
             detail="Couldn't create page",
         )
 
-@router.get('/{id}', response_model=PageWithId)
-async def get_page_by_id(id, db: Session = Depends(get_db)):
+
+@router.get('/{page_id}', response_model=PageWithId)
+async def get_page_by_id(page_id, db: Session = Depends(get_db)):
     """
         Find the page by its id.
     """
     try:
-       return pages.get_by_id(id, db)
+        return pages.get_by_id(page_id, db)
     except HTTPException as e:
         raise e
     except:
@@ -38,28 +39,30 @@ async def get_page_by_id(id, db: Session = Depends(get_db)):
             detail="Couldn't get page",
         )
 
-@router.put('/{id}', response_model=PageWithId)
-async def update_page(id, request: Page, db: Session = Depends(get_db)):
+
+@router.put('/{page_id}', response_model=PageWithId)
+async def update_page(page_id, request: Page, db: Session = Depends(get_db)):
     """
         Update page's text and image.
     """
     try:
-        return pages.update(id, request, db)
+        return pages.update(page_id, request, db)
     except HTTPException as e:
-        raise e 
+        raise e
     except:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Couldn't update page.",
         )
 
-@router.delete('/{id}')
-async def delete_page(id, db: Session = Depends(get_db)):
+
+@router.delete('/{page_id}')
+async def delete_page(page_id, db: Session = Depends(get_db)):
     """
         Delete the page.
     """
     try:
-        return pages.delete(id, db)
+        return pages.delete(page_id, db)
     except HTTPException as e:
         raise e
     except:
