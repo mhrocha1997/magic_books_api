@@ -33,7 +33,7 @@ class AllBooks(BaseModel):
 
 
 class CompleteBook(Book):
-    pages: List[dict] = []
+    pages: List[PageWithId] = []
 
     class Config():
         orm_mode = True
